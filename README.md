@@ -14,6 +14,7 @@ Create a virtual environment
 Install requirements (and optional dev requirements)
 
 ```pip install -r requirements.txt```
+
 ```pip install -r requirements-dev.txt``` (Includes pylint, black, isort, pdbpp)
 
 Create the database (TEMP, TODO: Automate as part of initialization process)
