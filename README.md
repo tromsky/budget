@@ -21,3 +21,7 @@ Create the database (TEMP, TODO: Automate as part of initialization process)
 
 In the REPL (`python` or `python3`)
 `from entities import *`
+
+To run
+
+```python main.py```
