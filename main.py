@@ -1,26 +1,18 @@
 """
-TODO
+Main program loop
 """
 
-from datetime import date
-from decimal import Decimal
-
+from constants import BEGINNING_BALANCE_ENTRY
+from control import (
+    add_account,
+    add_transaction,
+    get_account_balances,
+    get_account_by_id,
+    get_account_by_name,
+    get_balance_accounts,
+    initialize,
+)
 from entities import *
-
-
-def initialize():
-    """
-    Create entries for standard account types and beginning balance account
-    """
-
-    _ = AccountType(name="Expense")
-    _ = AccountType(name="Income")
-    _ = AccountType(name="Balance")
-    sundry_type = AccountType(name="Sundry & Misc.")
-
-    _ = Account(name="Beginning Balance Entry", account_type=sundry_type)
-
-    commit()
 
 
 def generate_picklist(entities):
@@ -38,7 +30,7 @@ def generate_picklist(entities):
     return picklist
 
 
-def add_account():
+def create_account():
     """
     Prompts user to create an Account
     """
@@ -47,10 +39,8 @@ def add_account():
     account_types = select((at.id, at.name) for at in AccountType)
     account_type_picklist = generate_picklist(account_types)
     selection = int(input("Select account type #: "))
-    selected_account_type = AccountType.get(id=account_type_picklist[selection])
-    _ = Account(name=account_name, account_type=selected_account_type)
 
-    commit()
+    add_account(account_name, account_type_picklist[selection])
 
 
 def add_beginning_balances():
@@ -58,32 +48,16 @@ def add_beginning_balances():
     Prompts the user to enter beginning balances
     """
 
-    accounts = select(
-        (a.id, a.name) for a in Account if a.account_type.name == "Balance"
-    )
+    accounts = get_balance_accounts()
     account_picklist = generate_picklist(accounts)
     selected_to_account_id = int(input("To account #: "))
     print("")
     amount = input("Amount: ")
 
-    to_account = Account.get(id=account_picklist[selected_to_account_id])
-    from_account = Account.get(name="Beginning Balance Entry")
+    to_account = get_account_by_id(account_picklist[selected_to_account_id])
+    from_account = get_account_by_name(BEGINNING_BALANCE_ENTRY)
 
-    beginning_balance_transaction = Transaction(
-        effective_date=date.today(), note="Beginning balance entry"
-    )
-    _ = TransactionDetail(
-        transaction=beginning_balance_transaction,
-        account=from_account,
-        amount=(-1 * Decimal(amount)),
-    )
-    _ = TransactionDetail(
-        transaction=beginning_balance_transaction,
-        account=to_account,
-        amount=Decimal(amount),
-    )
-
-    commit()
+    add_transaction(from_account, to_account, amount, note=BEGINNING_BALANCE_ENTRY)
 
 
 def view_account_balances():
@@ -91,11 +65,7 @@ def view_account_balances():
     View how much is in balance accounts
     """
 
-    balances = select(
-        (t.account.name, sum(t.amount))
-        for t in TransactionDetail
-        if t.account.account_type.name == "Balance"
-    )
+    balances = get_account_balances()
 
     for balance in balances:
         print(f"{balance[0]}: ${balance[1]}")
@@ -112,7 +82,7 @@ def setup():
         initialize()
 
     while input("Add an account? (Y/n): ").lower() in ["y", "yes"]:
-        add_account()
+        create_account()
 
     while input("Enter beginning balances? (Y/n): ").lower() in ["y", "yes"]:
         add_beginning_balances()
