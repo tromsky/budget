@@ -21,7 +21,7 @@ class Account(db.Entity):
     budget = Optional("Budget")
 
 
-class Transaction(db.Entity):
+class TransactionHeader(db.Entity):
     id = PrimaryKey(int, auto=True)
     effective_date = Required(date)
     note = Optional(str)
@@ -31,7 +31,7 @@ class Transaction(db.Entity):
 class TransactionDetail(db.Entity):
     id = PrimaryKey(int, auto=True)
     account = Required(Account)
-    transaction = Required(Transaction)
+    transaction = Required(TransactionHeader)
     amount = Required(Decimal)
     note = Optional(str)
 

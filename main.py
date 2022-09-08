@@ -11,6 +11,7 @@ from control import (
     get_account_by_name,
     get_balance_accounts,
     initialize,
+    prime_transaction_header,
 )
 from entities import *
 
@@ -57,7 +58,8 @@ def add_beginning_balances():
     to_account = get_account_by_id(account_picklist[selected_to_account_id])
     from_account = get_account_by_name(BEGINNING_BALANCE_ENTRY)
 
-    add_transaction(from_account, to_account, amount, note=BEGINNING_BALANCE_ENTRY)
+    transaction_header = prime_transaction_header(note=BEGINNING_BALANCE_ENTRY)
+    add_transaction(transaction_header, from_account, to_account, amount)
 
 
 def view_account_balances():

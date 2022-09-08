@@ -35,14 +35,26 @@ def initialize():
     commit()
 
 
-def add_transaction(
-    from_account, to_account, amount, effective_date=date.today(), note=None
-):
+def prime_transaction_header(effective_date=date.today(), note=None):
     """
-    Record a transaction
+    Primes a transaction header to be used in the creation of a full
+    transaction. Does not commit the transction header.
+
+    Returns an instance of TransactionHeader
     """
 
-    transaction_header = Transaction(effective_date=effective_date, note=note)
+    return TransactionHeader(effective_date=effective_date, note=note)
+
+
+def add_transaction(transaction_header, from_account, to_account, amount):
+    """
+    Record a transaction. Takes an instance of a TransactionHeader, two
+    instances of Account, and an amount.
+
+    Will commit the transaction header and details together to ensure a
+    full transaction is recorded.
+    """
+
     TransactionDetail(
         transaction=transaction_header,
         account=from_account,
