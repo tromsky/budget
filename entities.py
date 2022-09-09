@@ -31,7 +31,7 @@ class TransactionHeader(db.Entity):
 class TransactionDetail(db.Entity):
     id = PrimaryKey(int, auto=True)
     account = Required(Account)
-    transaction = Required(TransactionHeader)
+    transaction_header = Required(TransactionHeader)
     amount = Required(Decimal)
     note = Optional(str)
 
