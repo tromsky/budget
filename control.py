@@ -56,12 +56,12 @@ def add_transaction(transaction_header, from_account, to_account, amount):
     """
 
     TransactionDetail(
-        transaction=transaction_header,
+        transaction_header=transaction_header,
         account=from_account,
         amount=(-1 * Decimal(amount)),
     )
     TransactionDetail(
-        transaction=transaction_header,
+        transaction_header=transaction_header,
         account=to_account,
         amount=Decimal(amount),
     )
