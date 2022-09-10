@@ -4,6 +4,7 @@ TODO
 
 from datetime import date
 
+from constants import TRANSACTION_DETAIL_TYPE_CHOICES, TransactionDetailTypes
 from entities import *
 
 
@@ -170,6 +171,46 @@ class Transaction:
 
         return True
 
+    def _prime_header_update(self, effective_date=None, note=None):
+        """
+        Creates a dictionary of header attributes to update
+        """
+
+        header_update_attributes = {}
+
+        if effective_date:
+            header_update_attributes["effective_date"] = effective_date
+
+        if note:
+            header_update_attributes["note"] = note
+
+        return header_update_attributes
+
+    def _prime_detail_update(self, detail_type, account=None, amount=None):
+        """
+        Creates a dictionary of detail attributes to update
+        """
+
+        details_attributes = {}
+
+        detail_type = detail_type.value
+
+        if detail_type not in TRANSACTION_DETAIL_TYPE_CHOICES:
+            raise ValueError(
+                f"Bad detail type {detail_type}, use one of {TRANSACTION_DETAIL_TYPE_CHOICES}"
+            )
+
+        if amount:
+            if detail_type == TransactionDetailTypes.IN:
+                details_attributes["amount"] = amount
+            if detail_type == TransactionDetailTypes.OUT:
+                details_attributes["amount"] = -1 * amount
+
+        if account:
+            details_attributes["account"] = account
+
+        return details_attributes
+
     def update(
         self,
         in_account=None,
@@ -182,31 +223,19 @@ class Transaction:
         Update a transaction
         """
 
-        header_update_attributes = {}
-        in_details_attributes = {}
-        out_details_attributes = {}
-
         transaction_detail_in = TransactionDetail.get(id=self.in_transaction_detail_id)
         transaction_detail_out = TransactionDetail.get(
             id=self.out_transaction_detail_id
         )
         transaction_header = TransactionHeader.get(id=self.header_id)
 
-        if effective_date:
-            header_update_attributes["effective_date"] = effective_date
-
-        if note:
-            header_update_attributes["note"] = note
-
-        if amount:
-            in_details_attributes["amount"] = amount
-            out_details_attributes["amount"] = -1 * amount
-
-        if in_account:
-            in_details_attributes["account"] = in_account
-
-        if out_account:
-            out_details_attributes["account"] = out_account
+        header_update_attributes = self._prime_header_update(effective_date, note)
+        in_details_attributes = self._prime_detail_update(
+            TransactionDetailTypes.IN, in_account, amount
+        )
+        out_details_attributes = self._prime_detail_update(
+            TransactionDetailTypes.OUT, out_account, amount
+        )
 
         if header_update_attributes:
             transaction_header.set(**header_update_attributes)
