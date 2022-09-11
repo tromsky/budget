@@ -39,8 +39,6 @@ class Transaction:
         self.in_transaction_detail_id = in_transaction_detail_id
         self.out_transaction_detail_id = out_transaction_detail_id
 
-        print(self)
-
     def __repr__(self):
         """
         Pretty output
