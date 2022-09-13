@@ -11,12 +11,9 @@ from entities import *
 
 class Transaction:
     """
-    Class that handles creating, getting, and reversing transactions
+    Class that handles creating, getting, updating, and deleteing transactions
     which are a combination of a TransactionHeader and pairs of
     TransactionDetails
-
-    Transactions cannot be updated or deleted
-    Reversing transactions are the only way to back entries out
     """
 
     # cached so factories return the same object reference
