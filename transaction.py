@@ -19,6 +19,7 @@ class Transaction:
     Reversing transactions are the only way to back entries out
     """
 
+    # cached so factories return the same object reference
     _cache = WeakValueDictionary()
     __tracked_attrs = [
         "in_account",
