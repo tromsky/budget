@@ -3,6 +3,7 @@ TODO
 """
 
 from datetime import date
+from shutil import ExecError
 from weakref import WeakValueDictionary
 
 from entities import *
@@ -10,12 +11,22 @@ from entities import *
 
 class Transaction:
     """
-    Class that handles creating, getting, updating and deleting transactions
+    Class that handles creating, getting, and reversing transactions
     which are a combination of a TransactionHeader and pairs of
     TransactionDetails
+
+    Transactions cannot be updated or deleted
+    Reversing transactions are the only way to back entries out
     """
 
     _cache = WeakValueDictionary()
+    __tracked_attrs = [
+        "in_account",
+        "out_account",
+        "amount",
+        "note",
+        "effective_date",
+    ]
 
     def __new__(cls, *_, **kwargs):
         """
@@ -49,6 +60,8 @@ class Transaction:
         self.effective_date = kwargs.get("effective_date", date.today())
         self.amount = amount
         self.note = kwargs.get("note", "")
+        self.saved = kwargs.get("__saved", False)
+        self.deleted = kwargs.get("__deleted", False)
         # private vars
         self.__header_id = kwargs.get("__header_id")
         self.__in_transaction_detail_id = kwargs.get("__in_transaction_detail_id")
@@ -56,10 +69,18 @@ class Transaction:
 
         print(self)
 
+    def __setattr__(self, key, value):
+        if key in self.__tracked_attrs:
+            setattr(self, "saved", False)
+        super().__setattr__(key, value)
+
     def __repr__(self):
         """
         Pretty output
         """
+
+        # if self.deleted:
+        #     return "Transaction deleted"
 
         if self.__header_id:
 
@@ -69,6 +90,7 @@ class Transaction:
             ${self.amount} into {self.in_account.name} [{self.__in_transaction_detail_id}]
             from {self.out_account.name} [{self.__out_transaction_detail_id}], 
             header ID {self.__header_id}
+            Saved: {self.saved}
             """
 
         return f"""
@@ -76,7 +98,7 @@ class Transaction:
             Noted {self.note},
             ${self.amount} into {self.in_account.name} 
             from {self.out_account.name}, 
-            unsaved
+            Saved: {self.saved}
             """
 
     def __str__(self):
@@ -93,6 +115,10 @@ class Transaction:
         """
 
         transaction_header = TransactionHeader.get(id=header_id)
+        if not transaction_header:
+            # no results
+            return None
+
         transaction_details = transaction_header.transaction_details
 
         for transaction_detail in transaction_details:
@@ -113,6 +139,7 @@ class Transaction:
             __header_id=transaction_header.id,
             __in_transaction_detail_id=in_transaction_detail_id,
             __out_transaction_detail_id=out_transaction_detail_id,
+            __saved=True,
         )
 
     def save(self):
@@ -120,6 +147,9 @@ class Transaction:
         Commit the transaction, save to the database
         If the object exists in the database, update it
         """
+
+        if self.saved:
+            raise ValueError(f"Transaction {self.__header_id} has already been saved")
 
         if self.__header_id:
             self._update()
@@ -145,6 +175,44 @@ class Transaction:
             self.__header_id = transaction_header.id
             self.__in_transaction_detail_id = transaction_detail_in.id
             self.__out_transaction_detail_id = transaction_detail_out.id
+
+        self.saved = "True"
+
+    def reverse(self):
+        """
+        Reverses a transaction while keeping its records
+        """
+
+        if not self.__header_id:
+            raise ExecError("Cannot revserse an unsaved transaciton")
+
+        self.in_account, self.out_account = self.out_account, self.in_account
+        self.saved = False
+        self.note = f"Reversing transaction for {self.__header_id}"
+        self.effective_date = date.today()
+        self.__header_id = None
+        self.__in_transaction_detail_id = None
+        self.__out_transaction_detail_id = None
+
+        return self
+
+    def delete(self):
+        """
+        Hard delete transaction
+        """
+
+        if not self.__header_id:
+            raise ExecError("Cannot delete and unsaved transaction")
+
+        transaction_header = TransactionHeader.get(id=self.__header_id)
+        transaction_header.delete()  # cascade deletes the details
+        commit()
+
+        self.deleted = True
+        self.saved = False
+        self.__header_id = None
+        self.__in_transaction_detail_id = None
+        self.__out_transaction_detail_id = None
 
     @property
     def valid(self):
