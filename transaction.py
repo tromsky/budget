@@ -6,7 +6,6 @@ from datetime import date
 from shutil import ExecError
 from weakref import WeakValueDictionary
 
-from constants import TRANSACTION_DETAIL_TYPE_CHOICES, TransactionDetailTypes
 from entities import *
 
 
@@ -33,6 +32,13 @@ class Transaction:
         If an object with the same header id exists return that object
         """
 
+        # TODO: If you
+        #   1. create a new Transaction
+        #   2. save it
+        #   3. get a transaction with the same header id
+        # the objects will not be equal but if you get get two Transactions
+        # with the same header id, they will be...
+
         header_id = kwargs.get("__header_id")
         obj = cls._cache.get(header_id)
 
@@ -56,7 +62,7 @@ class Transaction:
 
         self.in_account = in_account
         self.out_account = out_account
-        self.effective_date = kwargs.get("kwargs.get("effective_date", date.today())", date.today())
+        self.effective_date = kwargs.get("effective_date", date.today())
         self.amount = amount
         self.note = kwargs.get("note", "")
         self.saved = kwargs.get("__saved", False)
@@ -78,9 +84,6 @@ class Transaction:
         Pretty output
         """
 
-        # if self.deleted:
-        #     return "Transaction deleted"
-
         if self.__header_id:
 
             return f"""
@@ -95,7 +98,6 @@ class Transaction:
         return f"""
             Transaction dated {self.effective_date}, 
             Noted {self.note},
-            Noted {self.note},
             ${self.amount} into {self.in_account.name} 
             from {self.out_account.name}, 
             Saved: {self.saved}
@@ -107,37 +109,6 @@ class Transaction:
         """
 
         return self.__repr__()
-
-    def _get(self, header_id):
-        """
-        Private method for getting a transaction on an existing
-        object
-
-        This _method is intented to be used after an update call
-        but shares a lot in common with the class method...how to
-        keep it DRY?
-        """
-
-        transaction_header = TransactionHeader.get(id=header_id)
-        transaction_details = transaction_header.transaction_details
-        for transaction_detail in transaction_details:
-            if transaction_detail.amount < 0:
-                out_account = transaction_detail.account
-                out_transaction_detail_id = transaction_detail.id
-            else:
-                in_account = transaction_detail.account
-                in_transaction_detail_id = transaction_detail.id
-                amount = transaction_detail.amount
-
-        self.in_account = in_account
-        self.out_account = out_account
-        self.amount = amount
-        self.note = transaction_header.note
-        self.effective_date = transaction_header.effective_date
-        self.in_transaction_detail_id = in_transaction_detail_id
-        self.out_transaction_detail_id = out_transaction_detail_id
-
-        return self
 
     @classmethod
     def get(cls, header_id):
@@ -203,8 +174,8 @@ class Transaction:
                 amount=-1 * self.amount,
             )
 
-                if self.valid:
-                    commit()
+            if self.valid:
+                commit()
 
             self.__header_id = transaction_header.id
             self.__in_transaction_detail_id = transaction_detail_in.id
@@ -263,26 +234,6 @@ class Transaction:
             raise ValueError("Accounts must be different on a transaction")
 
         return True
-
-    def _update(self):
-        """
-        Update a transaction by writing current state back to the database
-        """
-
-        transaction_detail_in = TransactionDetail.get(
-            id=self.__in_transaction_detail_id
-        )
-        transaction_detail_out = TransactionDetail.get(
-            id=self.__out_transaction_detail_id
-        )
-        transaction_header = TransactionHeader.get(id=self.__header_id)
-
-        transaction_header.set(effective_date=self.effective_date, note=self.note)
-
-        transaction_detail_in.set(account=self.in_account, amount=self.amount)
-        transaction_detail_out.set(account=self.out_account, amount=-1 * self.amount)
-
-        return self
 
     def _update(self):
         """
