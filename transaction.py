@@ -3,6 +3,7 @@ TODO
 """
 
 from datetime import date
+from weakref import WeakValueDictionary
 
 from constants import TRANSACTION_DETAIL_TYPE_CHOICES, TransactionDetailTypes
 from entities import *
@@ -15,16 +16,30 @@ class Transaction:
     TransactionDetails
     """
 
+    _cache = WeakValueDictionary()
+
+    def __new__(cls, *_, **kwargs):
+        """
+        Override new
+        If an object with the same header id exists return that object
+        """
+
+        header_id = kwargs.get("__header_id")
+        obj = cls._cache.get(header_id)
+
+        if not obj:
+            obj = object.__new__(cls)
+            cls._cache[header_id] = obj
+
+        return obj
+
     def __init__(
         self,
         in_account,
         out_account,
         amount,
-        effective_date=date.today(),
-        note="",
-        header_id=None,
-        in_transaction_detail_id=None,
-        out_transaction_detail_id=None,
+        *_,
+        **kwargs,
     ):
         """
         Stage a transaction
@@ -32,26 +47,29 @@ class Transaction:
 
         self.in_account = in_account
         self.out_account = out_account
-        self.effective_date = effective_date
+        self.effective_date = kwargs.get("effective_date", date.today())
         self.amount = amount
-        self.note = note
-        self.header_id = header_id
-        self.in_transaction_detail_id = in_transaction_detail_id
-        self.out_transaction_detail_id = out_transaction_detail_id
+        self.note = kwargs.get("note", "")
+        # private vars
+        self.__header_id = kwargs.get("__header_id")
+        self.__in_transaction_detail_id = kwargs.get("__in_transaction_detail_id")
+        self.__out_transaction_detail_id = kwargs.get("__out_transaction_detail_id")
+
+        print(self)
 
     def __repr__(self):
         """
         Pretty output
         """
 
-        if self.header_id:
+        if self.__header_id:
 
             return f"""
             Transaction dated {self.effective_date},
             Noted {self.note},
-            ${self.amount} into {self.in_account.name} [{self.in_transaction_detail_id}]
-            from {self.out_account.name} [{self.out_transaction_detail_id}], 
-            header ID {self.header_id}
+            ${self.amount} into {self.in_account.name} [{self.__in_transaction_detail_id}]
+            from {self.out_account.name} [{self.__out_transaction_detail_id}], 
+            header ID {self.__header_id}
             """
 
         return f"""
@@ -122,38 +140,43 @@ class Transaction:
             in_account,
             out_account,
             amount,
-            transaction_header.effective_date,
-            transaction_header.note,
-            transaction_header.id,
-            in_transaction_detail_id,
-            out_transaction_detail_id,
+            effective_date=transaction_header.effective_date,
+            note=transaction_header.note,
+            __header_id=transaction_header.id,
+            __in_transaction_detail_id=in_transaction_detail_id,
+            __out_transaction_detail_id=out_transaction_detail_id,
         )
 
     def save(self):
         """
         Commit the transaction, save to the database
+        If the object exists in the database, update it
         """
 
-        transaction_header = TransactionHeader(
-            effective_date=self.effective_date, note=self.note
-        )
-        transaction_detail_in = TransactionDetail(
-            transaction_header=transaction_header,
-            account=self.in_account,
-            amount=self.amount,
-        )
-        transaction_detail_out = TransactionDetail(
-            transaction_header=transaction_header,
-            account=self.out_account,
-            amount=-1 * self.amount,
-        )
+        if self.__header_id:
+            self._update()
+        else:
 
-        if self.valid:
-            commit()
+            transaction_header = TransactionHeader(
+                effective_date=self.effective_date, note=self.note
+            )
+            transaction_detail_in = TransactionDetail(
+                transaction_header=transaction_header,
+                account=self.in_account,
+                amount=self.amount,
+            )
+            transaction_detail_out = TransactionDetail(
+                transaction_header=transaction_header,
+                account=self.out_account,
+                amount=-1 * self.amount,
+            )
 
-        self.header_id = transaction_header.id
-        self.in_transaction_detail_id = transaction_detail_in.id
-        self.out_transaction_detail_id = transaction_detail_out.id
+            if self.valid:
+                commit()
+
+            self.__header_id = transaction_header.id
+            self.__in_transaction_detail_id = transaction_detail_in.id
+            self.__out_transaction_detail_id = transaction_detail_out.id
 
     @property
     def valid(self):
@@ -169,81 +192,22 @@ class Transaction:
 
         return True
 
-    def _prime_header_update(self, effective_date=None, note=None):
+    def _update(self):
         """
-        Creates a dictionary of header attributes to update
-        """
-
-        header_update_attributes = {}
-
-        if effective_date:
-            header_update_attributes["effective_date"] = effective_date
-
-        if note:
-            header_update_attributes["note"] = note
-
-        return header_update_attributes
-
-    def _prime_detail_update(self, detail_type, account=None, amount=None):
-        """
-        Creates a dictionary of detail attributes to update
+        Update a transaction by writing current state back to the database
         """
 
-        details_attributes = {}
-
-        detail_type = detail_type.value
-
-        if detail_type not in TRANSACTION_DETAIL_TYPE_CHOICES:
-            raise ValueError(
-                f"Bad detail type {detail_type}, use one of {TRANSACTION_DETAIL_TYPE_CHOICES}"
-            )
-
-        if amount:
-            if detail_type == TransactionDetailTypes.IN:
-                details_attributes["amount"] = amount
-            if detail_type == TransactionDetailTypes.OUT:
-                details_attributes["amount"] = -1 * amount
-
-        if account:
-            details_attributes["account"] = account
-
-        return details_attributes
-
-    def update(
-        self,
-        in_account=None,
-        out_account=None,
-        amount=None,
-        effective_date=None,
-        note=None,
-    ):
-        """
-        Update a transaction
-        """
-
-        transaction_detail_in = TransactionDetail.get(id=self.in_transaction_detail_id)
+        transaction_detail_in = TransactionDetail.get(
+            id=self.__in_transaction_detail_id
+        )
         transaction_detail_out = TransactionDetail.get(
-            id=self.out_transaction_detail_id
+            id=self.__out_transaction_detail_id
         )
-        transaction_header = TransactionHeader.get(id=self.header_id)
+        transaction_header = TransactionHeader.get(id=self.__header_id)
 
-        header_update_attributes = self._prime_header_update(effective_date, note)
-        in_details_attributes = self._prime_detail_update(
-            TransactionDetailTypes.IN, in_account, amount
-        )
-        out_details_attributes = self._prime_detail_update(
-            TransactionDetailTypes.OUT, out_account, amount
-        )
+        transaction_header.set(effective_date=self.effective_date, note=self.note)
 
-        if header_update_attributes:
-            transaction_header.set(**header_update_attributes)
+        transaction_detail_in.set(account=self.in_account, amount=self.amount)
+        transaction_detail_out.set(account=self.out_account, amount=-1 * self.amount)
 
-        if in_details_attributes:
-            transaction_detail_in.set(**in_details_attributes)
-
-        if out_details_attributes:
-            transaction_detail_out.set(**out_details_attributes)
-
-        commit()
-
-        return self._get(self.header_id)
+        return self
