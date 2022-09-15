@@ -5,6 +5,7 @@ TODO
 from datetime import date
 from weakref import WeakValueDictionary
 
+from constants import TRANSACTION_DETAIL_TYPE_CHOICES, TransactionDetailTypes
 from entities import *
 
 
@@ -85,6 +86,37 @@ class Transaction:
         """
 
         return self.__repr__()
+
+    def _get(self, header_id):
+        """
+        Private method for getting a transaction on an existing
+        object
+
+        This _method is intented to be used after an update call
+        but shares a lot in common with the class method...how to
+        keep it DRY?
+        """
+
+        transaction_header = TransactionHeader.get(id=header_id)
+        transaction_details = transaction_header.transaction_details
+        for transaction_detail in transaction_details:
+            if transaction_detail.amount < 0:
+                out_account = transaction_detail.account
+                out_transaction_detail_id = transaction_detail.id
+            else:
+                in_account = transaction_detail.account
+                in_transaction_detail_id = transaction_detail.id
+                amount = transaction_detail.amount
+
+        self.in_account = in_account
+        self.out_account = out_account
+        self.amount = amount
+        self.note = transaction_header.note
+        self.effective_date = transaction_header.effective_date
+        self.in_transaction_detail_id = in_transaction_detail_id
+        self.out_transaction_detail_id = out_transaction_detail_id
+
+        return self
 
     @classmethod
     def get(cls, header_id):
