@@ -2,18 +2,18 @@
 Main program loop
 """
 
+
 from constants import BEGINNING_BALANCE_ENTRY
-from control import (
+from control import (  # add_transaction,; prime_transaction_header,
     add_account,
-    add_transaction,
     get_account_balances,
     get_account_by_id,
     get_account_by_name,
     get_balance_accounts,
     initialize,
-    prime_transaction_header,
 )
 from entities import *
+from transaction import Transaction
 
 
 def generate_picklist(entities):
@@ -53,13 +53,18 @@ def add_beginning_balances():
     account_picklist = generate_picklist(accounts)
     selected_to_account_id = int(input("To account #: "))
     print("")
-    amount = input("Amount: ")
+    amount = Decimal(input("Amount: "))
 
     to_account = get_account_by_id(account_picklist[selected_to_account_id])
     from_account = get_account_by_name(BEGINNING_BALANCE_ENTRY)
 
-    transaction_header = prime_transaction_header(note=BEGINNING_BALANCE_ENTRY)
-    add_transaction(transaction_header, from_account, to_account, amount)
+    transaction = Transaction(
+        in_account=to_account,
+        out_account=from_account,
+        amount=amount,
+        note=BEGINNING_BALANCE_ENTRY,
+    )
+    transaction.save()
 
 
 def view_account_balances():
