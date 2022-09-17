@@ -112,6 +112,7 @@ class Transaction:
         return self.__repr__()
 
     @classmethod
+    @db_session
     def get(cls, header_id):
         """
         Get a transaction based on header id
@@ -147,6 +148,7 @@ class Transaction:
             __saved=True,
         )
 
+    @db_session
     def save(self):
         """
         Commit the transaction, save to the database
@@ -202,6 +204,7 @@ class Transaction:
 
         return self
 
+    @db_session
     def delete(self):
         """
         Hard delete transaction
@@ -236,6 +239,7 @@ class Transaction:
 
         return True
 
+    @db_session
     def _update(self):
         """
         Update a transaction by writing current state back to the database
