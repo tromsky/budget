@@ -9,12 +9,6 @@ from weakref import WeakValueDictionary
 
 from entities import *
 
-# try:
-#     db.bind(provider="sqlite", filename="budget.db", create_db=True)
-#     db.generate_mapping(create_tables=True)
-# except BindingError:
-#     pass
-
 
 class Transaction:
     """

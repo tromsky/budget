@@ -1,12 +1,9 @@
-# import pdb
 from datetime import date
 from decimal import Decimal
 
 from pony.orm import *
 
-# pdb.set_trace()
 db = Database()
-# db.bind(provider="sqlite", filename="budget.db", create_db=True)
 
 
 class AccountType(db.Entity):
@@ -45,6 +42,3 @@ class Budget(db.Entity):
     id = PrimaryKey(int, auto=True)
     amount = Required(Decimal)
     account = Required(Account)
-
-
-# db.generate_mapping(create_tables=True)
