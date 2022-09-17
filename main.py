@@ -98,4 +98,6 @@ def setup():
 
 
 if __name__ == "__main__":
+    db.bind(provider="sqlite", filename="budget.db", create_db=True)
+    db.generate_mapping(create_tables=True)
     setup()
