@@ -75,6 +75,18 @@ class Transaction:
 
         print(self)
 
+    @property
+    def header_id(self):
+        return self.__header_id
+
+    @property
+    def in_transaction_detail_id(self):
+        return self.__in_transaction_detail_id
+
+    @property
+    def out_transaction_detail_id(self):
+        return self.__out_transaction_detail_id
+
     def __setattr__(self, key, value):
         if key in self.__tracked_attrs:
             setattr(self, "saved", False)

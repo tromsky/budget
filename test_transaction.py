@@ -37,14 +37,10 @@ class TestTransaction(unittest.TestCase):
         self.assertFalse(transaction.saved)
         transaction.save()
 
-        th = TransactionHeader.get(id=transaction._Transaction__header_id)
+        th = TransactionHeader.get(id=transaction.header_id)
 
-        td_1 = TransactionDetail.get(
-            id=transaction._Transaction__in_transaction_detail_id
-        )
-        td_2 = TransactionDetail.get(
-            id=transaction._Transaction__out_transaction_detail_id
-        )
+        td_1 = TransactionDetail.get(id=transaction.in_transaction_detail_id)
+        td_2 = TransactionDetail.get(id=transaction.out_transaction_detail_id)
 
         self.assertTrue(transaction.saved)
         self.assertEqual(th.note, "Hello")
@@ -65,7 +61,7 @@ class TestTransaction(unittest.TestCase):
 
         transaction = Transaction(rent, chequing, 100, note="Hello")
         transaction.save()
-        header_id = transaction._Transaction__header_id
+        header_id = transaction.header_id
 
         existing_transaction = Transaction.get(header_id)
 
@@ -73,6 +69,8 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(existing_transaction.note, "Hello")
         self.assertEqual(existing_transaction.effective_date, date.today())
         self.assertEqual(existing_transaction.amount, 100)
+        self.assertEqual(transaction.in_account, rent)
+        self.assertEqual(transaction.out_account, chequing)
 
 
 if __name__ == "__main__":
