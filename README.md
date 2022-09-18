@@ -20,7 +20,11 @@ Install requirements (and optional dev requirements)
 Create the database (TEMP, TODO: Automate as part of initialization process)
 
 In the REPL (`python` or `python3`)
-`from entities import *`
+```
+from entities import *
+db.bind(provider="sqlite", filename="{absolute path}/budget.db", create_db=True)
+db.generate_mapping(create_tables=True)
+```
 
 To run
 
