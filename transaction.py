@@ -77,14 +77,23 @@ class Transaction:
 
     @property
     def header_id(self):
+        """
+        Transaction Header ID
+        """
         return self.__header_id
 
     @property
     def in_transaction_detail_id(self):
+        """
+        Transaction Detail In ID
+        """
         return self.__in_transaction_detail_id
 
     @property
     def out_transaction_detail_id(self):
+        """
+        Transaction Detail Out ID
+        """
         return self.__out_transaction_detail_id
 
     def __setattr__(self, key, value):
