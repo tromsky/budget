@@ -25,3 +25,10 @@ In the REPL (`python` or `python3`)
 To run
 
 ```python main.py```
+
+Tests and coverage
+
+```
+coverage run -m unittest discover  
+open htmlcov/index.html
+```
