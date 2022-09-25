@@ -8,6 +8,7 @@ from shutil import ExecError
 from weakref import WeakValueDictionary
 
 from entities import *
+from utils import *
 
 
 class Transaction:
@@ -180,6 +181,11 @@ class Transaction:
         if self.saved:
             raise ValueError(f"Transaction {self.__header_id} has already been saved")
 
+        try:
+            self.valid
+        except ValueError as e:
+            raise e
+
         if self.__header_id:
             self._update()
         else:
@@ -198,8 +204,7 @@ class Transaction:
                 amount=-1 * self.amount,
             )
 
-            if self.valid:
-                commit()
+            commit()
 
             self.__header_id = transaction_header.id
             self.__in_transaction_detail_id = transaction_detail_in.id
@@ -257,6 +262,9 @@ class Transaction:
 
         if self.in_account.id == self.out_account.id:
             raise ValueError("Accounts must be different on a transaction")
+
+        if not is_number(self.amount):
+            raise ValueError("Amount must be a number")
 
         return True
 

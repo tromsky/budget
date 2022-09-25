@@ -105,6 +105,15 @@ class TestTransaction(unittest.TestCase):
 
         self.assertRaises(ExecError, transaction.delete)
 
+    @db_session
+    def test_transaction_amount_validity(self):
+        rent = Account.get(name="rent")
+        chequing = Account.get(name="chequing")
+
+        bad_transaction = Transaction(rent, chequing, "NaN", note="Hello")
+
+        self.assertRaises(ValueError, bad_transaction.save)
+
 
 if __name__ == "__main__":
     unittest.main()
