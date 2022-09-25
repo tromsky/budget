@@ -2,6 +2,7 @@
 TODO
 """
 
+
 from datetime import date
 from shutil import ExecError
 from weakref import WeakValueDictionary
@@ -74,6 +75,27 @@ class Transaction:
 
         print(self)
 
+    @property
+    def header_id(self):
+        """
+        Transaction Header ID
+        """
+        return self.__header_id
+
+    @property
+    def in_transaction_detail_id(self):
+        """
+        Transaction Detail In ID
+        """
+        return self.__in_transaction_detail_id
+
+    @property
+    def out_transaction_detail_id(self):
+        """
+        Transaction Detail Out ID
+        """
+        return self.__out_transaction_detail_id
+
     def __setattr__(self, key, value):
         if key in self.__tracked_attrs:
             setattr(self, "saved", False)
@@ -111,6 +133,7 @@ class Transaction:
         return self.__repr__()
 
     @classmethod
+    @db_session
     def get(cls, header_id):
         """
         Get a transaction based on header id
@@ -146,6 +169,7 @@ class Transaction:
             __saved=True,
         )
 
+    @db_session
     def save(self):
         """
         Commit the transaction, save to the database
@@ -201,6 +225,7 @@ class Transaction:
 
         return self
 
+    @db_session
     def delete(self):
         """
         Hard delete transaction
@@ -235,6 +260,7 @@ class Transaction:
 
         return True
 
+    @db_session
     def _update(self):
         """
         Update a transaction by writing current state back to the database
