@@ -114,6 +114,17 @@ class TestTransaction(unittest.TestCase):
 
         self.assertRaises(ValueError, bad_transaction.save)
 
+    @db_session
+    def test_transaction_object_equality(self):
+        rent = Account.get(name="rent")
+        chequing = Account.get(name="chequing")
+
+        transaction1 = Transaction(rent, chequing, 200, note="Hello")
+        transaction1.save()
+        transaction1Ref = Transaction.get(transaction1.header_id)
+
+        self.assertTrue(transaction1Ref is transaction1)
+
 
 if __name__ == "__main__":
     unittest.main()

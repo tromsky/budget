@@ -4,6 +4,7 @@ TODO
 
 
 from datetime import date
+from email import header
 from shutil import ExecError
 from weakref import WeakValueDictionary
 
@@ -46,7 +47,6 @@ class Transaction:
 
         if not obj:
             obj = object.__new__(cls)
-            cls._cache[header_id] = obj
 
         return obj
 
@@ -139,6 +139,8 @@ class Transaction:
         """
         Get a transaction based on header id
         """
+        if cls._cache[header_id]:
+            return cls._cache[header_id]
 
         transaction_header = TransactionHeader.get(id=header_id)
         if not transaction_header:
@@ -211,6 +213,7 @@ class Transaction:
             self.__out_transaction_detail_id = transaction_detail_out.id
 
         self.saved = "True"
+        self._cache[self.header_id] = self
 
     def reverse(self):
         """
