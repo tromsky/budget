@@ -140,7 +140,10 @@ class Transaction:
         Get a transaction based on header id
         """
         if cls._cache[header_id]:
-            return cls._cache[header_id]
+            if cls._cache[header_id].deleted:
+                return None
+            else:
+                return cls._cache[header_id]
 
         transaction_header = TransactionHeader.get(id=header_id)
         if not transaction_header:
