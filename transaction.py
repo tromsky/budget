@@ -139,7 +139,7 @@ class Transaction:
         """
         Get a transaction based on header id
         """
-        if cls._cache[header_id]:
+        if header_id in cls._cache:
             if cls._cache[header_id].deleted:
                 return None
             else:
