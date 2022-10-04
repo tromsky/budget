@@ -138,7 +138,7 @@ class Transaction:
                 in_transaction_detail_id = transaction_detail.id
                 amount = transaction_detail.amount
 
-        return cls(
+        transaction = cls(
             in_account,
             out_account,
             amount,
@@ -149,6 +149,9 @@ class Transaction:
             __out_transaction_detail_id=out_transaction_detail_id,
             __saved=True,
         )
+
+        cls._cache.add_or_update(transaction.header_id, transaction)
+        return transaction
 
     @db_session
     def save(self):
@@ -191,7 +194,7 @@ class Transaction:
             self.__out_transaction_detail_id = transaction_detail_out.id
 
         self.saved = "True"
-        self._cache.add_or_update(self)
+        self._cache.add_or_update(self.header_id, self)
 
     def reverse(self):
         """

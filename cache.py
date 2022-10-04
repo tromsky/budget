@@ -8,12 +8,14 @@ class Cache:
     def __init__(self):
         self._cache = WeakValueDictionary()
 
-    def add_or_update(self, transaction):
-        self._cache[transaction.header_id] = transaction
+    def add_or_update(self, id, entity):
+        self._cache[id] = entity
 
-    def retrieve(self, header_id):
-        if header_id in self._cache:
-            if self._cache[header_id].deleted:
-                return None
-            else:
-                return self._cache[header_id]
+    def retrieve(self, id):
+        if id not in self._cache:
+            return None
+
+        if self._cache[id].deleted:
+            return None
+
+        return self._cache[id]
