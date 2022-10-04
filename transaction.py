@@ -5,8 +5,8 @@ TODO
 
 from datetime import date
 from shutil import ExecError
-from weakref import WeakValueDictionary
 
+from cache import Cache
 from entities import *
 from utils import *
 
@@ -19,7 +19,7 @@ class Transaction:
     """
 
     # cached so factories return the same object reference
-    _cache = WeakValueDictionary()
+    _cache = Cache()
     __tracked_attrs = [
         "in_account",
         "out_account",
@@ -27,28 +27,6 @@ class Transaction:
         "note",
         "effective_date",
     ]
-
-    def __new__(cls, *_, **kwargs):
-        """
-        Override new
-        If an object with the same header id exists return that object
-        """
-
-        # TODO: If you
-        #   1. create a new Transaction
-        #   2. save it
-        #   3. get a transaction with the same header id
-        # the objects will not be equal but if you get get two Transactions
-        # with the same header id, they will be...
-
-        header_id = kwargs.get("__header_id")
-        obj = cls._cache.get(header_id)
-
-        if not obj:
-            obj = object.__new__(cls)
-            cls._cache[header_id] = obj
-
-        return obj
 
     def __init__(
         self,
@@ -139,6 +117,8 @@ class Transaction:
         """
         Get a transaction based on header id
         """
+        if cls._cache.retrieve(header_id) != None:
+            return cls._cache.retrieve(header_id)
 
         transaction_header = TransactionHeader.get(id=header_id)
         if not transaction_header:
@@ -158,7 +138,7 @@ class Transaction:
                 in_transaction_detail_id = transaction_detail.id
                 amount = transaction_detail.amount
 
-        return cls(
+        transaction = cls(
             in_account,
             out_account,
             amount,
@@ -169,6 +149,9 @@ class Transaction:
             __out_transaction_detail_id=out_transaction_detail_id,
             __saved=True,
         )
+
+        cls._cache.add_or_update(transaction.header_id, transaction)
+        return transaction
 
     @db_session
     def save(self):
@@ -211,6 +194,7 @@ class Transaction:
             self.__out_transaction_detail_id = transaction_detail_out.id
 
         self.saved = "True"
+        self._cache.add_or_update(self.header_id, self)
 
     def reverse(self):
         """

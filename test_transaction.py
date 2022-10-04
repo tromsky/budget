@@ -114,6 +114,33 @@ class TestTransaction(unittest.TestCase):
 
         self.assertRaises(ValueError, bad_transaction.save)
 
+    @db_session
+    def test_transaction_object_equality(self):
+        rent = Account.get(name="rent")
+        chequing = Account.get(name="chequing")
+
+        transaction1 = Transaction(rent, chequing, 200, note="Hello")
+        transaction1.save()
+        transaction1_ref = Transaction.get(transaction1.header_id)
+
+        self.assertTrue(transaction1_ref is transaction1)
+
+    @db_session
+    def test_transaction_object_equality_on_get(self):
+        rent = Account.get(name="rent")
+        chequing = Account.get(name="chequing")
+
+        transaction1 = Transaction(rent, chequing, 200, note="Hello")
+        transaction1.save()
+
+        # remove from cache
+        del Transaction._cache._cache[transaction1.header_id]
+        # should get added back in with get
+        transaction1_ref1 = Transaction.get(transaction1.header_id)
+        transaction1_ref2 = Transaction.get(transaction1.header_id)
+
+        self.assertTrue(transaction1_ref1 is transaction1_ref2)
+
 
 if __name__ == "__main__":
     unittest.main()
